@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { BLOCKS } from '../data/methodology'
 import type { IpuData } from '../hooks/useIpuData'
 import { TrafficLightBadge } from '../components/TrafficLightBadge'
+import { KyrgyzstanMap } from '../components/KyrgyzstanMap'
+import { getStabilityLevel } from '../lib/calculations'
 
 export function RegionsPage({ data }: { data: IpuData }) {
   const { regionalResults, regenerateRegions } = data
@@ -30,47 +32,22 @@ export function RegionsPage({ data }: { data: IpuData }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-5">
-        {/* Схематическая тепловая карта */}
+        {/* Географическая тепловая карта */}
         <div className="card-surface rounded-2xl p-5">
           <h3 className="text-sm font-semibold text-slate-200 mb-3">Тепловая карта устойчивости регионов</h3>
-          <div className="relative w-full aspect-[16/11] rounded-xl bg-[#0e1320] border border-slate-800 overflow-hidden">
-            <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <line x1="0" y1="25" x2="100" y2="25" stroke="#334155" strokeWidth="0.3" />
-              <line x1="0" y1="50" x2="100" y2="50" stroke="#334155" strokeWidth="0.3" />
-              <line x1="0" y1="75" x2="100" y2="75" stroke="#334155" strokeWidth="0.3" />
-              <line x1="25" y1="0" x2="25" y2="100" stroke="#334155" strokeWidth="0.3" />
-              <line x1="50" y1="0" x2="50" y2="100" stroke="#334155" strokeWidth="0.3" />
-              <line x1="75" y1="0" x2="75" y2="100" stroke="#334155" strokeWidth="0.3" />
-            </svg>
-            {regionalResults.map((r) => {
-              const isSelected = r.region.id === selectedId
-              return (
-                <button
-                  key={r.region.id}
-                  onClick={() => setSelectedId(r.region.id)}
-                  className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group"
-                  style={{ left: `${r.region.mapX}%`, top: `${r.region.mapY}%` }}
-                >
-                  <span
-                    className={`rounded-full flex items-center justify-center font-bold text-[11px] transition-all ${
-                      isSelected ? 'ring-2 ring-white' : ''
-                    }`}
-                    style={{
-                      width: r.region.type === 'город' ? 34 : 44,
-                      height: r.region.type === 'город' ? 34 : 44,
-                      background: r.stability.color,
-                      color: '#0b0f1a',
-                      boxShadow: `0 0 14px ${r.stability.glow}`,
-                    }}
-                  >
-                    {r.index.toFixed(0)}
-                  </span>
-                  <span className="mt-1 text-[10px] text-slate-400 whitespace-nowrap group-hover:text-slate-200 max-w-[90px] text-center leading-tight">
-                    {r.region.name.replace('область', 'обл.').replace('город ', '')}
-                  </span>
-                </button>
-              )
-            })}
+          <div className="rounded-xl bg-[#0e1320] border border-slate-800 overflow-hidden p-2">
+            <KyrgyzstanMap
+              regions={regionalResults.map((r) => ({
+                id: r.region.id,
+                shortLabel: r.region.name,
+                index: r.index,
+                color: r.stability.color,
+                glow: r.stability.glow,
+                isSelected: r.region.id === selectedId,
+                isCity: r.region.type === 'город',
+              }))}
+              onSelect={setSelectedId}
+            />
           </div>
           <div className="flex items-center gap-4 mt-4 flex-wrap text-xs text-slate-500">
             <LegendDot color="#16a34a" label="Очень высокая / высокая" />
@@ -109,6 +86,69 @@ export function RegionsPage({ data }: { data: IpuData }) {
               </button>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Сводная разбивка по 10 блокам в разрезе всех регионов */}
+      <div className="card-surface rounded-2xl p-5">
+        <h3 className="text-sm font-semibold text-slate-200 mb-1">Разбивка по аналитическим блокам в разрезе областей</h3>
+        <p className="text-xs text-slate-500 mb-3">
+          Значения всех 10 аналитических блоков для каждого региона одновременно. Цвет ячейки соответствует
+          шкале уровня устойчивости (п. 4.9–4.11).
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border-separate border-spacing-y-1">
+            <thead>
+              <tr>
+                <th className="text-left text-slate-500 font-medium px-2 py-1 sticky left-0 bg-[#0f1420]">
+                  Регион
+                </th>
+                {BLOCKS.map((block) => (
+                  <th key={block.id} className="text-center text-slate-500 font-medium px-1.5 py-1 min-w-[64px]" title={block.name}>
+                    {block.shortName}
+                  </th>
+                ))}
+                <th className="text-center text-slate-400 font-semibold px-2 py-1 min-w-[56px]">РИ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {regionalResults.map((r) => (
+                <tr
+                  key={r.region.id}
+                  onClick={() => setSelectedId(r.region.id)}
+                  className={`cursor-pointer transition ${
+                    r.region.id === selectedId ? 'outline outline-1 outline-sky-500/50' : ''
+                  }`}
+                >
+                  <td className="px-2 py-1.5 text-slate-200 whitespace-nowrap sticky left-0 bg-[#0f1420] rounded-l-md">
+                    {r.region.name}
+                  </td>
+                  {BLOCKS.map((block) => {
+                    const score = r.blockScores[block.id] ?? 0
+                    const level = getStabilityLevel(score)
+                    return (
+                      <td key={block.id} className="px-1.5 py-1.5 text-center">
+                        <span
+                          className="inline-flex items-center justify-center rounded-md w-full py-1 font-semibold"
+                          style={{ background: `${level.color}26`, color: level.color }}
+                        >
+                          {score.toFixed(0)}
+                        </span>
+                      </td>
+                    )
+                  })}
+                  <td className="px-1.5 py-1.5 text-center rounded-r-md">
+                    <span
+                      className="inline-flex items-center justify-center rounded-md w-full py-1 font-bold"
+                      style={{ background: `${r.stability.color}33`, color: r.stability.color }}
+                    >
+                      {r.index.toFixed(0)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 

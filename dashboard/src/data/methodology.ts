@@ -238,21 +238,18 @@ export interface Region {
   name: string
   type: 'область' | 'город'
   population: number
-  /** приблизительное расположение для схематической карты, в процентах контейнера */
-  mapX: number
-  mapY: number
 }
 
 export const REGIONS: Region[] = [
-  { id: 'batken', name: 'Баткенская область', type: 'область', population: 573900, mapX: 16, mapY: 70 },
-  { id: 'jalal-abad', name: 'Джалал-Абадская область', type: 'область', population: 1339800, mapX: 30, mapY: 58 },
-  { id: 'issyk-kul', name: 'Иссык-Кульская область', type: 'область', population: 500900, mapX: 78, mapY: 30 },
-  { id: 'naryn', name: 'Нарынская область', type: 'область', population: 291500, mapX: 60, mapY: 48 },
-  { id: 'osh-region', name: 'Ошская область', type: 'область', population: 1373700, mapX: 34, mapY: 74 },
-  { id: 'talas', name: 'Таласская область', type: 'область', population: 260900, mapX: 20, mapY: 30 },
-  { id: 'chuy', name: 'Чуйская область', type: 'область', population: 977600, mapX: 46, mapY: 20 },
-  { id: 'bishkek', name: 'город Бишкек', type: 'город', population: 1128600, mapX: 46, mapY: 12 },
-  { id: 'osh-city', name: 'город Ош', type: 'город', population: 322000, mapX: 36, mapY: 82 },
+  { id: 'batken', name: 'Баткенская область', type: 'область', population: 573900 },
+  { id: 'jalal-abad', name: 'Джалал-Абадская область', type: 'область', population: 1339800 },
+  { id: 'issyk-kul', name: 'Иссык-Кульская область', type: 'область', population: 500900 },
+  { id: 'naryn', name: 'Нарынская область', type: 'область', population: 291500 },
+  { id: 'osh-region', name: 'Ошская область', type: 'область', population: 1373700 },
+  { id: 'talas', name: 'Таласская область', type: 'область', population: 260900 },
+  { id: 'chuy', name: 'Чуйская область', type: 'область', population: 977600 },
+  { id: 'bishkek', name: 'город Бишкек', type: 'город', population: 1128600 },
+  { id: 'osh-city', name: 'город Ош', type: 'город', population: 322000 },
 ]
 
 export interface StabilityLevel {
